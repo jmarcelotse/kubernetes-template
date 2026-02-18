@@ -1,0 +1,107 @@
+# ============================================================================
+# Production Environment Configuration Example
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+
+# ----------------------------------------------------------------------------
+# AWS Configuration
+# ----------------------------------------------------------------------------
+aws_region = "us-east-1"
+
+# ----------------------------------------------------------------------------
+# Cluster Configuration
+# ----------------------------------------------------------------------------
+cluster_name    = "eks-prod"
+cluster_version = "1.28"
+
+# ----------------------------------------------------------------------------
+# Network Configuration
+# ----------------------------------------------------------------------------
+vpc_cidr           = "10.1.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# NAT Gateway - Multi-AZ for high availability in production
+enable_nat_gateway = true
+single_nat_gateway = false  # One NAT per AZ for HA
+
+# VPC Endpoints
+enable_vpc_endpoints = true
+
+# ----------------------------------------------------------------------------
+# Control Plane Configuration
+# ----------------------------------------------------------------------------
+enable_control_plane_logs        = true
+control_plane_log_types          = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+control_plane_log_retention_days = 30
+
+# Secrets Encryption
+enable_secrets_encryption = true
+kms_key_deletion_window   = 30
+
+# ----------------------------------------------------------------------------
+# Node Groups Configuration
+# ----------------------------------------------------------------------------
+node_groups = {
+  system = {
+    instance_types = ["t3.large"]
+    min_size       = 3
+    max_size       = 5
+    desired_size   = 3
+    disk_size      = 100
+    labels = {
+      role = "system"
+    }
+    taints = [{
+      key    = "CriticalAddonsOnly"
+      value  = "true"
+      effect = "NoSchedule"
+    }]
+  }
+
+  apps = {
+    instance_types = ["m5.xlarge", "m5.2xlarge"]
+    min_size       = 5
+    max_size       = 50
+    desired_size   = 10
+    disk_size      = 200
+    labels = {
+      role = "apps"
+    }
+    taints = []
+  }
+}
+
+# ----------------------------------------------------------------------------
+# Cluster Access
+# ----------------------------------------------------------------------------
+cluster_endpoint_private_access = true
+cluster_endpoint_public_access  = true
+cluster_endpoint_public_access_cidrs = [
+  "203.0.113.0/24"  # Replace with your office/VPN CIDR
+]
+
+# ----------------------------------------------------------------------------
+# Platform Configuration
+# ----------------------------------------------------------------------------
+# Grafana admin password (use a strong password, consider using AWS Secrets Manager)
+grafana_admin_password = "CHANGE_ME_VERY_STRONG_PASSWORD"
+
+# Route53 configuration for DNS management
+route53_zone_id = "Z0987654321XYZ"  # Replace with your Route53 zone ID
+domain_name     = "example.com"  # Replace with your production domain
+
+# Let's Encrypt email for certificate notifications
+cert_manager_email = "admin@example.com"  # Replace with your email
+
+# ----------------------------------------------------------------------------
+# Tags
+# ----------------------------------------------------------------------------
+tags = {
+  Environment = "prod"
+  ManagedBy   = "Terraform"
+  Project     = "eks-template"
+  Owner       = "platform-team"
+  CostCenter  = "engineering"
+  Purpose     = "kubernetes-cluster"
+  Compliance  = "required"
+}

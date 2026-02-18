@@ -1,0 +1,106 @@
+# ============================================================================
+# Staging Environment Configuration Example
+# ============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+
+# ----------------------------------------------------------------------------
+# AWS Configuration
+# ----------------------------------------------------------------------------
+aws_region = "us-east-1"
+
+# ----------------------------------------------------------------------------
+# Cluster Configuration
+# ----------------------------------------------------------------------------
+cluster_name    = "eks-staging"
+cluster_version = "1.28"
+
+# ----------------------------------------------------------------------------
+# Network Configuration
+# ----------------------------------------------------------------------------
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# NAT Gateway - Single NAT for cost optimization in staging
+enable_nat_gateway = true
+single_nat_gateway = true
+
+# VPC Endpoints
+enable_vpc_endpoints = true
+
+# ----------------------------------------------------------------------------
+# Control Plane Configuration
+# ----------------------------------------------------------------------------
+enable_control_plane_logs        = true
+control_plane_log_types          = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+control_plane_log_retention_days = 7
+
+# Secrets Encryption
+enable_secrets_encryption = true
+kms_key_deletion_window   = 7
+
+# ----------------------------------------------------------------------------
+# Node Groups Configuration
+# ----------------------------------------------------------------------------
+node_groups = {
+  system = {
+    instance_types = ["t3.medium"]
+    min_size       = 2
+    max_size       = 3
+    desired_size   = 2
+    disk_size      = 50
+    labels = {
+      role = "system"
+    }
+    taints = [{
+      key    = "CriticalAddonsOnly"
+      value  = "true"
+      effect = "NoSchedule"
+    }]
+  }
+
+  apps = {
+    instance_types = ["t3.large"]
+    min_size       = 2
+    max_size       = 10
+    desired_size   = 3
+    disk_size      = 100
+    labels = {
+      role = "apps"
+    }
+    taints = []
+  }
+}
+
+# ----------------------------------------------------------------------------
+# Cluster Access
+# ----------------------------------------------------------------------------
+cluster_endpoint_private_access = true
+cluster_endpoint_public_access  = true
+cluster_endpoint_public_access_cidrs = [
+  "0.0.0.0/0"  # Replace with your office/VPN CIDR for security
+]
+
+# ----------------------------------------------------------------------------
+# Platform Configuration
+# ----------------------------------------------------------------------------
+# Grafana admin password (use a strong password)
+grafana_admin_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# Route53 configuration for DNS management
+route53_zone_id = "Z1234567890ABC"  # Replace with your Route53 zone ID
+domain_name     = "staging.example.com"  # Replace with your domain
+
+# Let's Encrypt email for certificate notifications
+cert_manager_email = "admin@example.com"  # Replace with your email
+
+# ----------------------------------------------------------------------------
+# Tags
+# ----------------------------------------------------------------------------
+tags = {
+  Environment = "staging"
+  ManagedBy   = "Terraform"
+  Project     = "eks-template"
+  Owner       = "platform-team"
+  CostCenter  = "engineering"
+  Purpose     = "kubernetes-cluster"
+}

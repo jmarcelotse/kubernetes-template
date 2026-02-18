@@ -1,0 +1,68 @@
+name: Terraform Apply - Staging
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'modules/**'
+      - 'live/aws/staging/**'
+      - '.github/workflows/terraform-apply-staging.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: '1.5.0'
+  AWS_REGION: 'us-east-1'
+  ENVIRONMENT: 'staging'
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply - Staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: |
+          cd live/aws/${{ env.ENVIRONMENT }}
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd live/aws/${{ env.ENVIRONMENT }}
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd live/aws/${{ env.ENVIRONMENT }}
+          terraform apply -auto-approve tfplan
+
+      - name: Terraform Output
+        id: output
+        run: |
+          cd live/aws/${{ env.ENVIRONMENT }}
+          terraform output -json > outputs.json
+          cat outputs.json
+
+      - name: Upload Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs-staging
+          path: live/aws/${{ env.ENVIRONMENT }}/outputs.json
+          retention-days: 30
